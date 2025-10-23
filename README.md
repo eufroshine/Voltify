@@ -110,7 +110,7 @@ Sebelum memulai, pastikan Anda sudah install:
 
 ### **1. Clone Repository**
 ```bash
-git clone https://github.com/username/voltify.git
+git clone https://github.com/eufroshine/voltify.git
 cd voltify
 ```
 
