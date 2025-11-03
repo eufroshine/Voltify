@@ -8,7 +8,7 @@
 
 **Decision Support System (DSS) untuk Monitoring dan Analisis Penggunaan Listrik Rumah Tangga dengan Fuzzy Logic**
 
-[Features](#-features) • [Tech Stack](#-tech-stack) • [Installation](#-installation) • [Usage](#-usage) • [API Documentation](#-api-documentation)
+[Features](#-features) • [Screenshots](#-screenshots) • [Tech Stack](#-tech-stack) • [Installation](#-installation) • [Usage](#-usage) • [API Documentation](#-api-documentation)
 
 </div>
 
@@ -61,6 +61,34 @@ Voltify adalah aplikasi web Decision Support System (DSS) yang membantu pengguna
 - ✅ Konfigurasi harga per kWh
 - ✅ Set target bulanan
 - ✅ Referensi tarif listrik PLN
+
+---
+
+## 📸 **Screenshots**
+
+### **Dashboard**
+![Dashboard](./ss/dashboard.png)
+*Halaman utama yang menampilkan statistik penggunaan listrik, grafik tren konsumsi, dan breakdown kategori hemat/normal/boros*
+
+### **Hitung Penggunaan**
+![Hitung Penggunaan](./ss/hitung.png)
+*Form untuk menambahkan alat elektronik dan menghitung total penggunaan listrik harian dengan analisis fuzzy logic*
+
+### **Riwayat Penggunaan**
+![Riwayat](./ss/riwayat.png)
+*History lengkap penggunaan listrik harian dengan detail breakdown per alat dan kategori fuzzy*
+
+### **Login**
+![Login](./ss/login.png)
+*Halaman login untuk mengakses sistem monitoring listrik*
+
+### **Register**
+![Register](./ss/register.png)
+*Halaman pendaftaran akun baru untuk pengguna baru*
+
+### **Pengaturan**
+![Pengaturan](./ss/pengaturan.png)
+*Konfigurasi harga per kWh, target bulanan, dan referensi tarif PLN*
 
 ---
 
@@ -421,6 +449,14 @@ voltify/
 │   ├── vite.config.js
 │   └── package.json
 │
+├── ss/                           # Screenshots folder
+│   ├── dashboard.png
+│   ├── hitung.png
+│   ├── riwayat.png
+│   ├── login.png
+│   ├── register.png
+│   └── pengaturan.png
+│
 └── README.md
 ```
 
@@ -538,7 +574,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 Jika Anda mengalami masalah atau punya pertanyaan:
 
-1. Buka [Issues](https://github.com/username/voltify/issues)
+1. Buka [Issues](https://github.com/eufroshine/voltify/issues)
 2. Search terlebih dahulu apakah ada issue serupa
 3. Jika belum ada, buat issue baru dengan detail:
    - Deskripsi masalah
@@ -550,9 +586,9 @@ Jika Anda mengalami masalah atau punya pertanyaan:
 
 ## 📊 **Stats**
 
-![GitHub stars](https://img.shields.io/github/stars/username/voltify?style=social)
-![GitHub forks](https://img.shields.io/github/forks/username/voltify?style=social)
-![GitHub issues](https://img.shields.io/github/issues/username/voltify)
+![GitHub stars](https://img.shields.io/github/stars/eufroshine/voltify?style=social)
+![GitHub forks](https://img.shields.io/github/forks/eufroshine/voltify?style=social)
+![GitHub issues](https://img.shields.io/github/issues/eufroshine/voltify)
 
 ---
 
