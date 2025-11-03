@@ -8,7 +8,7 @@
 
 **Decision Support System (DSS) untuk Monitoring dan Analisis Penggunaan Listrik Rumah Tangga dengan Fuzzy Logic**
 
-[Features](#-features) • [Screenshots](#-screenshots) • [Tech Stack](#-tech-stack) • [Installation](#-installation) • [Usage](#-usage) • [API Documentation](#-api-documentation)
+[Features](#features) • [Screenshots](#screenshots) • [Tech Stack](#tech-stack) • [Installation](#installation) • [Usage](#usage) • [API Documentation](#api-documentation)
 
 </div>
 
