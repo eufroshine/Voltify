@@ -1,175 +1,288 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import ApplianceForm from './components/ApplianceForm';
 import ApplianceList from './components/ApplianceList';
 import FuzzyAnalysis from './components/FuzzyAnalysis';
 import Dashboard from './components/Dashboard';
 import UsageChart from './components/UsageChart';
-import UsageHistory from './components/UsageHistory';  // BARU
+import UsageHistory from './components/UsageHistory';
 import Settings from './components/Settings';
+import Login from './pages/Login';
+import Register from './pages/Register'; // ✅ Import Register
 
 function App() {
+  // ===== STATE UTAMA =====
   const [refreshAppliances, setRefreshAppliances] = useState(0);
   const [refreshDashboard, setRefreshDashboard] = useState(0);
   const [selectedAppliances, setSelectedAppliances] = useState([]);
-  const [activeTab, setActiveTab] = useState('home');
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  const handleApplianceAdded = () => {
-    setRefreshAppliances(prev => prev + 1);
-  };
+  // ===== CEK TOKEN LOGIN =====
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    setIsLoggedIn(!!token);
+  }, []);
 
-  const handleCalculated = () => {
-    setRefreshDashboard(prev => prev + 1);
-  };
-
-  const handleSelectionChange = (ids) => {
+  // ===== HANDLER UTAMA (MEMOIZED) =====
+  const handleApplianceAdded = useCallback(() => {
+    console.log('🔄 Appliance added');
+    setRefreshAppliances((prev) => prev + 1);
+  }, []);
+  
+  const handleCalculated = useCallback(() => {
+    console.log('✅ Calculation completed');
+    setRefreshDashboard((prev) => prev + 1);
+  }, []);
+  
+  const handleSelectionChange = useCallback((ids) => {
+    console.log('📋 Selection changed to:', ids.length, 'items');
     setSelectedAppliances(ids);
-  };
+  }, []);
+  
+  const handleHistoryChanged = useCallback(() => {
+    console.log('📊 History changed');
+    setRefreshDashboard((prev) => prev + 1);
+  }, []);
 
-  // BARU: Handler untuk history changed
-  const handleHistoryChanged = () => {
-    setRefreshDashboard(prev => prev + 1);
-  };
+  // ===== LOGOUT FUNCTION =====
+  const handleLogout = useCallback(() => {
+    localStorage.removeItem('token');
+    setIsLoggedIn(false);
+    setActiveTab('dashboard');
+  }, []);
 
+  // ===== RENDER ISI HALAMAN =====
   const renderContent = () => {
     switch (activeTab) {
-      case 'home':
+      case 'dashboard':
         return (
-          <>
+          <div key="dashboard">
             <Dashboard refresh={refreshDashboard} />
             <UsageChart refresh={refreshDashboard} />
-          </>
+          </div>
         );
+
       case 'calculate':
         return (
-          <>
+          <div key="calculate">
             <ApplianceForm onApplianceAdded={handleApplianceAdded} />
-            <ApplianceList 
-              refresh={refreshAppliances} 
+            <ApplianceList
+              refresh={refreshAppliances}
               onSelectionChange={handleSelectionChange}
             />
-            <FuzzyAnalysis 
+            <FuzzyAnalysis
               selectedAppliances={selectedAppliances}
               onCalculated={handleCalculated}
             />
-          </>
+          </div>
         );
-      case 'history':  // BARU
+
+      case 'history':
         return (
-          <UsageHistory 
-            refresh={refreshDashboard}
-            onDataChanged={handleHistoryChanged}
-          />
+          <div key="history">
+            <UsageHistory refresh={refreshDashboard} onDataChanged={handleHistoryChanged} />
+          </div>
         );
+
       case 'settings':
-        return <Settings />;
+        return (
+          <div key="settings">
+            <Settings />
+          </div>
+        );
+
       default:
         return null;
     }
   };
 
-  return (
-    <div style={{ minHeight: '100vh', background: '#f9fafb' }}>
-      <Navbar />
-      
-      {/* Tab Navigation */}
-      <div className="container">
-        <div style={{
-          display: 'flex',
-          gap: '12px',
-          marginBottom: '30px',
-          borderBottom: '2px solid #e5e7eb',
-          paddingBottom: '0'
-        }}>
-          <button
-            onClick={() => setActiveTab('home')}
-            style={{
-              padding: '12px 24px',
-              border: 'none',
-              background: 'transparent',
-              cursor: 'pointer',
-              fontWeight: '600',
-              fontSize: '15px',
-              color: activeTab === 'home' ? '#3b82f6' : '#6b7280',
-              borderBottom: activeTab === 'home' ? '3px solid #3b82f6' : '3px solid transparent',
-              transition: 'all 0.3s ease'
-            }}
-          >
-            📊 Dashboard
-          </button>
-          <button
-            onClick={() => setActiveTab('calculate')}
-            style={{
-              padding: '12px 24px',
-              border: 'none',
-              background: 'transparent',
-              cursor: 'pointer',
-              fontWeight: '600',
-              fontSize: '15px',
-              color: activeTab === 'calculate' ? '#3b82f6' : '#6b7280',
-              borderBottom: activeTab === 'calculate' ? '3px solid #3b82f6' : '3px solid transparent',
-              transition: 'all 0.3s ease'
-            }}
-          >
-            ⚡ Hitung Penggunaan
-          </button>
-          {/* BARU: Tab History */}
-          <button
-            onClick={() => setActiveTab('history')}
-            style={{
-              padding: '12px 24px',
-              border: 'none',
-              background: 'transparent',
-              cursor: 'pointer',
-              fontWeight: '600',
-              fontSize: '15px',
-              color: activeTab === 'history' ? '#3b82f6' : '#6b7280',
-              borderBottom: activeTab === 'history' ? '3px solid #3b82f6' : '3px solid transparent',
-              transition: 'all 0.3s ease'
-            }}
-          >
-            📜 History
-          </button>
-          <button
-            onClick={() => setActiveTab('settings')}
-            style={{
-              padding: '12px 24px',
-              border: 'none',
-              background: 'transparent',
-              cursor: 'pointer',
-              fontWeight: '600',
-              fontSize: '15px',
-              color: activeTab === 'settings' ? '#3b82f6' : '#6b7280',
-              borderBottom: activeTab === 'settings' ? '3px solid #3b82f6' : '3px solid transparent',
-              transition: 'all 0.3s ease'
-            }}
-          >
-            ⚙️ Pengaturan
-          </button>
-        </div>
+  // ===== HALAMAN UTAMA =====
+  const HomePage = () => (
+    <div style={{ minHeight: '100vh', background: '#fafbfc' }}>
+      <Navbar
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        isLoggedIn={isLoggedIn}
+        onLogout={handleLogout}
+      />
 
-        {/* Content */}
+      {/* Main Content */}
+      <main className="container" style={{ paddingTop: '20px', paddingBottom: '60px' }}>
         {renderContent()}
-      </div>
+      </main>
 
       {/* Footer */}
-      <footer style={{
-        marginTop: '60px',
-        padding: '30px 0',
-        background: 'white',
-        borderTop: '1px solid #e5e7eb',
-        textAlign: 'center'
-      }}>
+      <footer
+        style={{
+          marginTop: '60px',
+          padding: '40px 0',
+          background:
+            'linear-gradient(135deg, rgba(107, 138, 153, 0.03) 0%, rgba(107, 138, 153, 0.08) 100%)',
+          borderTop: '2px solid rgba(107, 138, 153, 0.1)'
+        }}
+      >
         <div className="container">
-          <p style={{ color: '#6b7280', fontSize: '14px' }}>
-            © 2025 Voltify - Smart Electricity Management System
-          </p>
-          <p style={{ color: '#9ca3af', fontSize: '12px', marginTop: '8px' }}>
-            Powered by Fuzzy Logic DSS
-          </p>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: '20px',
+              marginBottom: '24px'
+            }}
+          >
+            <div style={{ textAlign: 'left' }}>
+              <h3
+                style={{
+                  fontSize: '20px',
+                  fontWeight: '700',
+                  color: '#567180',
+                  marginBottom: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                <span style={{ fontSize: '24px' }}>⚡</span>
+                Voltify
+              </h3>
+              <p style={{ color: '#6b7a88', fontSize: '14px', margin: 0 }}>
+                Smart Electricity Management System
+              </p>
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                gap: '12px',
+                flexWrap: 'wrap'
+              }}
+            >
+              <div
+                style={{
+                  background: 'white',
+                  padding: '12px 20px',
+                  borderRadius: '12px',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+                  border: '1px solid rgba(225, 230, 235, 0.6)'
+                }}
+              >
+                <p
+                  style={{
+                    fontSize: '11px',
+                    color: '#6b7a88',
+                    marginBottom: '4px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    fontWeight: '600'
+                  }}
+                >
+                  Technology
+                </p>
+                <p
+                  style={{
+                    fontSize: '14px',
+                    color: '#567180',
+                    fontWeight: '700',
+                    margin: 0
+                  }}
+                >
+                  Fuzzy Logic DSS
+                </p>
+              </div>
+
+              <div
+                style={{
+                  background: 'white',
+                  padding: '12px 20px',
+                  borderRadius: '12px',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+                  border: '1px solid rgba(225, 230, 235, 0.6)'
+                }}
+              >
+                <p
+                  style={{
+                    fontSize: '11px',
+                    color: '#6b7a88',
+                    marginBottom: '4px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    fontWeight: '600'
+                  }}
+                >
+                  Version
+                </p>
+                <p
+                  style={{
+                    fontSize: '14px',
+                    color: '#567180',
+                    fontWeight: '700',
+                    margin: 0
+                  }}
+                >
+                  v1.0.0
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div
+            style={{
+              paddingTop: '24px',
+              borderTop: '1px solid rgba(107, 138, 153, 0.1)',
+              textAlign: 'center'
+            }}
+          >
+            <p
+              style={{
+                color: '#6b7a88',
+                fontSize: '13px',
+                margin: 0,
+                fontWeight: '500'
+              }}
+            >
+              © 2025 Voltify. Built with ❤️ for sustainable energy management
+            </p>
+          </div>
         </div>
       </footer>
     </div>
+  );
+
+  // ===== ROUTES =====
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        
+        {/* ✅ Login Route */}
+        <Route
+          path="/login"
+          element={
+            isLoggedIn ? (
+              <Navigate to="/" />
+            ) : (
+              <Login setIsLoggedIn={setIsLoggedIn} />
+            )
+          }
+        />
+        
+        {/* ✅ Register Route - BARU */}
+        <Route
+          path="/register"
+          element={
+            isLoggedIn ? (
+              <Navigate to="/" />
+            ) : (
+              <Register />
+            )
+          }
+        />
+      </Routes>
+    </Router>
   );
 }
 

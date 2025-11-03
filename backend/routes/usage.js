@@ -5,7 +5,9 @@ const Appliance = require('../models/Appliance');
 const Settings = require('../models/Settings');
 const { fuzzyInference, generateSuggestions } = require('../controllers/fuzzyLogic');
 
+// ===============================
 // GET: Ambil semua usage history
+// ===============================
 router.get('/', async (req, res) => {
   try {
     const { startDate, endDate, limit = 30 } = req.query;
@@ -34,34 +36,37 @@ router.get('/', async (req, res) => {
   }
 });
 
-// POST: Calculate dan simpan usage hari ini
+// =============================================
+// POST: Hitung dan simpan analisis penggunaan
+// =============================================
 router.post('/calculate', async (req, res) => {
   try {
     const { date, applianceIds } = req.body;
-    
-    // Ambil settings (harga per kWh)
+
+    // Ambil setting harga per kWh
     let settings = await Settings.findOne();
     if (!settings) {
       settings = await Settings.create({ pricePerKwh: 1445 });
     }
-    
+
     // Ambil data appliances
     const appliances = await Appliance.find({ _id: { $in: applianceIds } });
-    
     if (appliances.length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'No appliances selected'
+        message: 'Tidak ada perangkat yang dipilih'
       });
     }
-    
-    // Hitung total kWh dan cost
+
+    // Hitung total kWh dan biaya
     let totalKwh = 0;
     const applianceUsage = appliances.map(appliance => {
-      const kwhUsed = (appliance.wattage * appliance.hoursPerDay) / 1000;
+      const watt = appliance.wattage || appliance.power || 0;
+      const hours = appliance.hoursPerDay || appliance.usageHours || 1;
+      const kwhUsed = (watt * hours) / 1000;
       const cost = kwhUsed * settings.pricePerKwh;
       totalKwh += kwhUsed;
-      
+
       return {
         applianceId: appliance._id,
         name: appliance.name,
@@ -69,20 +74,20 @@ router.post('/calculate', async (req, res) => {
         cost: parseFloat(cost.toFixed(2))
       };
     });
-    
+
     const totalCost = totalKwh * settings.pricePerKwh;
-    
-    // Fuzzy Logic Analysis
+
+    // Jalankan Fuzzy Logic
     const fuzzyResult = fuzzyInference(totalKwh);
     const suggestions = generateSuggestions(fuzzyResult, totalKwh, applianceUsage);
-    
-    // Cek apakah sudah ada data untuk tanggal ini
-    const existingUsage = await DailyUsage.findOne({
-      date: new Date(date || Date.now()).setHours(0, 0, 0, 0)
-    });
-    
+
+    // Cek apakah sudah ada data untuk tanggal yang sama
+    const normalizedDate = new Date(date || Date.now());
+    normalizedDate.setHours(0, 0, 0, 0);
+
+    const existingUsage = await DailyUsage.findOne({ date: normalizedDate });
+
     if (existingUsage) {
-      // Update existing
       existingUsage.totalKwh = parseFloat(totalKwh.toFixed(3));
       existingUsage.totalCost = parseFloat(totalCost.toFixed(2));
       existingUsage.pricePerKwh = settings.pricePerKwh;
@@ -90,20 +95,20 @@ router.post('/calculate', async (req, res) => {
       existingUsage.fuzzyCategory = fuzzyResult.category;
       existingUsage.fuzzyScore = fuzzyResult.score;
       existingUsage.suggestions = suggestions;
-      
+
       await existingUsage.save();
-      
+
       return res.json({
         success: true,
-        message: 'Usage updated successfully',
+        message: 'Data penggunaan berhasil diperbarui',
         data: existingUsage,
         fuzzyAnalysis: fuzzyResult
       });
     }
-    
-    // Create new
+
+    // Jika belum ada, buat baru
     const dailyUsage = new DailyUsage({
-      date: date || Date.now(),
+      date: normalizedDate,
       totalKwh: parseFloat(totalKwh.toFixed(3)),
       totalCost: parseFloat(totalCost.toFixed(2)),
       pricePerKwh: settings.pricePerKwh,
@@ -112,36 +117,38 @@ router.post('/calculate', async (req, res) => {
       fuzzyScore: fuzzyResult.score,
       suggestions
     });
-    
+
     await dailyUsage.save();
-    
+
     res.status(201).json({
       success: true,
-      message: 'Usage calculated and saved',
+      message: 'Data penggunaan berhasil dihitung dan disimpan',
       data: dailyUsage,
       fuzzyAnalysis: fuzzyResult
     });
   } catch (error) {
+    console.error('❌ Error calculating usage:', error);
     res.status(500).json({
       success: false,
-      message: 'Error calculating usage',
+      message: 'Terjadi kesalahan saat menghitung penggunaan listrik',
       error: error.message
     });
   }
 });
 
+// ===============================
 // GET: Summary statistik
+// ===============================
 router.get('/summary', async (req, res) => {
   try {
     const { days = 30 } = req.query;
-    
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - parseInt(days));
-    
+
     const usageData = await DailyUsage.find({
       date: { $gte: startDate }
     }).sort({ date: 1 });
-    
+
     if (usageData.length === 0) {
       return res.json({
         success: true,
@@ -154,20 +161,19 @@ router.get('/summary', async (req, res) => {
         }
       });
     }
-    
-    const totalKwh = usageData.reduce((sum, day) => sum + day.totalKwh, 0);
-    const totalCost = usageData.reduce((sum, day) => sum + day.totalCost, 0);
+
+    const totalKwh = usageData.reduce((sum, d) => sum + d.totalKwh, 0);
+    const totalCost = usageData.reduce((sum, d) => sum + d.totalCost, 0);
     const averageDaily = totalKwh / usageData.length;
     const estimatedMonthly = averageDaily * 30;
     const estimatedMonthlyCost = estimatedMonthly * usageData[0].pricePerKwh;
-    
-    // Category breakdown
+
     const categoryBreakdown = {
       Hemat: usageData.filter(d => d.fuzzyCategory === 'Hemat').length,
       Normal: usageData.filter(d => d.fuzzyCategory === 'Normal').length,
       Boros: usageData.filter(d => d.fuzzyCategory === 'Boros').length
     };
-    
+
     res.json({
       success: true,
       data: {
@@ -181,57 +187,59 @@ router.get('/summary', async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('❌ Error fetching summary:', error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching summary',
+      message: 'Terjadi kesalahan saat mengambil summary',
       error: error.message
     });
   }
 });
 
+// ===============================
 // DELETE: Hapus satu usage by ID
+// ===============================
 router.delete('/:id', async (req, res) => {
-    try {
-      const usage = await DailyUsage.findByIdAndDelete(req.params.id);
-      
-      if (!usage) {
-        return res.status(404).json({
-          success: false,
-          message: 'Usage data not found'
-        });
-      }
-      
-      res.json({
-        success: true,
-        message: 'Usage data deleted successfully'
-      });
-    } catch (error) {
-      res.status(500).json({
+  try {
+    const usage = await DailyUsage.findByIdAndDelete(req.params.id);
+
+    if (!usage) {
+      return res.status(404).json({
         success: false,
-        message: 'Error deleting usage data',
-        error: error.message
+        message: 'Data penggunaan tidak ditemukan'
       });
     }
-  });
-  
-  // DELETE: Hapus semua history
-  router.delete('/', async (req, res) => {
-    try {
-      const result = await DailyUsage.deleteMany({});
-      
-      res.json({
-        success: true,
-        message: `${result.deletedCount} usage records deleted successfully`
-      });
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: 'Error clearing usage history',
-        error: error.message
-      });
-    }
-  });
-  
-  module.exports = router;
+
+    res.json({
+      success: true,
+      message: 'Data penggunaan berhasil dihapus'
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Gagal menghapus data penggunaan',
+      error: error.message
+    });
+  }
+});
+
+// ===============================
+// DELETE: Hapus semua history
+// ===============================
+router.delete('/', async (req, res) => {
+  try {
+    const result = await DailyUsage.deleteMany({});
+    res.json({
+      success: true,
+      message: `${result.deletedCount} data penggunaan berhasil dihapus`
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Gagal menghapus seluruh history penggunaan',
+      error: error.message
+    });
+  }
+});
 
 module.exports = router;

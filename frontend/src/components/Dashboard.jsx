@@ -5,15 +5,14 @@ import { usageAPI } from '../services/api';
 const Dashboard = ({ refresh }) => {
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [days, setDays] = useState(7);
 
   useEffect(() => {
     fetchSummary();
-  }, [refresh, days]);
+  }, [refresh]);
 
   const fetchSummary = async () => {
     try {
-      const response = await usageAPI.getSummary(days);
+      const response = await usageAPI.getSummary(7);
       if (response.data.success) {
         setSummary(response.data.data);
       }
@@ -26,177 +25,202 @@ const Dashboard = ({ refresh }) => {
 
   if (loading) {
     return (
-      <div className="card text-center">
+      <div className="card text-center" style={{ padding: '48px 24px' }}>
         <div className="spinner" style={{ margin: '0 auto' }}></div>
-        <p style={{ marginTop: '10px' }}>Memuat dashboard...</p>
+        <p style={{ marginTop: '16px' }}>Memuat dashboard...</p>
       </div>
     );
   }
 
   if (!summary || summary.daysTracked === 0) {
     return (
-      <div className="card text-center">
-        <p style={{ color: '#6b7280' }}>
+      <div className="card text-center" style={{ padding: '48px 24px' }}>
+        <div
+          style={{
+            width: '80px',
+            height: '80px',
+            borderRadius: '50%',
+            background:
+              'linear-gradient(135deg, rgba(107, 138, 153, 0.1) 0%, rgba(107, 138, 153, 0.05) 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto 20px',
+          }}
+        >
+          <Zap size={40} color="#6b8a99" />
+        </div>
+        <h3 style={{ marginBottom: '8px' }}>Belum Ada Data</h3>
+        <p style={{ color: '#6b7a88', maxWidth: '400px', margin: '0 auto' }}>
           Belum ada data penggunaan. Hitung penggunaan harian Anda untuk melihat statistik!
         </p>
       </div>
     );
   }
 
-  // FIX: Pastikan semua nilai ada dengan default 0
   const statCards = [
     {
       title: 'Total Penggunaan',
-      value: `${summary.totalKwh || 0} kWh`,
-      subtitle: `${days} hari terakhir`,
+      value: `${summary.totalKwh || 0}`,
+      unit: 'kWh',
+      subtitle: '7 hari terakhir',
       icon: Zap,
-      color: '#3b82f6',
-      bgColor: '#dbeafe'
+      gradient: 'linear-gradient(135deg, #6b8a99 0%, #567180 100%)',
+      iconBg: 'rgba(107, 138, 153, 0.1)',
     },
     {
       title: 'Total Biaya',
-      value: `Rp ${(summary.totalCost || 0).toLocaleString('id-ID')}`,
-      subtitle: `${days} hari terakhir`,
+      value: `${(summary.totalCost || 0).toLocaleString('id-ID')}`,
+      unit: 'Rp',
+      subtitle: '7 hari terakhir',
       icon: DollarSign,
-      color: '#10b981',
-      bgColor: '#d1fae5'
+      gradient: 'linear-gradient(135deg, #5fb894 0%, #4a9d7a 100%)',
+      iconBg: 'rgba(95, 184, 148, 0.1)',
     },
     {
       title: 'Rata-rata Harian',
-      value: `${summary.averageDaily || 0} kWh`,
+      value: `${summary.averageDaily || 0}`,
+      unit: 'kWh',
       subtitle: 'Per hari',
       icon: TrendingUp,
-      color: '#f59e0b',
-      bgColor: '#fef3c7'
+      gradient: 'linear-gradient(135deg, #f0a96b 0%, #e0935a 100%)',
+      iconBg: 'rgba(240, 169, 107, 0.1)',
     },
     {
       title: 'Estimasi Bulanan',
-      value: `${summary.estimatedMonthly || 0} kWh`,
-      subtitle: `Rp ${(summary.estimatedMonthlyCost || 0).toLocaleString('id-ID')}`, // FIX INI
+      value: `${summary.estimatedMonthly || 0}`,
+      unit: 'kWh',
+      subtitle: `Rp ${(summary.estimatedMonthlyCost || 0).toLocaleString('id-ID')}`,
       icon: Calendar,
-      color: '#8b5cf6',
-      bgColor: '#ede9fe'
-    }
+      gradient: 'linear-gradient(135deg, #93a5b1 0%, #7a8d99 100%)',
+      iconBg: 'rgba(147, 165, 177, 0.1)',
+    },
+  ];
+
+  const categories = [
+    {
+      name: 'Hemat',
+      count: summary.categoryBreakdown?.Hemat || 0,
+      color: '#5fb894',
+      bgColor: 'rgba(95, 184, 148, 0.1)',
+      emoji: '✨',
+    },
+    {
+      name: 'Normal',
+      count: summary.categoryBreakdown?.Normal || 0,
+      color: '#f0a96b',
+      bgColor: 'rgba(240, 169, 107, 0.1)',
+      emoji: '⚡',
+    },
+    {
+      name: 'Boros',
+      count: summary.categoryBreakdown?.Boros || 0,
+      color: '#e07a7a',
+      bgColor: 'rgba(224, 122, 122, 0.1)',
+      emoji: '🔥',
+    },
   ];
 
   return (
     <div>
-      <div className="card">
-        <div className="card-header">
-          <h2 className="card-title">Dashboard Statistik</h2>
-          <select 
-            value={days} 
-            onChange={(e) => setDays(Number(e.target.value))}
-            className="form-select"
-            style={{ width: 'auto' }}
-          >
-            <option value={7}>7 Hari</option>
-            <option value={14}>14 Hari</option>
-            <option value={30}>30 Hari</option>
-          </select>
-        </div>
+      {/* Header Card */}
+      <div className="dashboard-header-card">
+        <h2 className="dashboard-title">Dashboard Statistik</h2>
+        <p className="dashboard-subtitle">Pantau penggunaan listrik Anda</p>
+      </div>
 
-        <div className="grid grid-2">
-          {statCards.map((stat, index) => (
-            <div 
-              key={index}
-              style={{
-                background: stat.bgColor,
-                borderRadius: '12px',
-                padding: '20px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '16px'
-              }}
-            >
-              <div style={{
-                background: 'white',
-                borderRadius: '12px',
-                padding: '12px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                <stat.icon size={28} color={stat.color} />
-              </div>
-              <div>
-                <p style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>
-                  {stat.title}
-                </p>
-                <h3 style={{ fontSize: '24px', fontWeight: '700', color: stat.color, marginBottom: '4px' }}>
-                  {stat.value}
-                </h3>
-                <p style={{ fontSize: '12px', color: '#6b7280' }}>
-                  {stat.subtitle}
-                </p>
+      {/* Stat Cards Grid */}
+      <div className="grid grid-2" style={{ marginBottom: '24px' }}>
+        {statCards.map((stat, index) => (
+          <div key={index} className="stat-card-item">
+            <div className="stat-card-icon-wrapper">
+              <div className="stat-card-icon" style={{ background: stat.iconBg }}>
+                <stat.icon
+                  size={26}
+                  style={{
+                    color: stat.gradient.match(/#[0-9a-f]{6}/i)[0],
+                  }}
+                />
               </div>
             </div>
-          ))}
-        </div>
+
+            <p className="stat-card-label">{stat.title}</p>
+
+            <div className="stat-card-value-wrapper">
+              {stat.unit === 'Rp' && (
+                <span
+                  className="stat-card-currency"
+                  style={{
+                    background: stat.gradient,
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                  }}
+                >
+                  Rp
+                </span>
+              )}
+              <h3
+                className="stat-card-value"
+                style={{
+                  background: stat.gradient,
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                }}
+              >
+                {stat.value}
+              </h3>
+              {stat.unit !== 'Rp' && (
+                <span className="stat-card-unit">{stat.unit}</span>
+              )}
+            </div>
+
+            <p className="stat-card-subtitle">{stat.subtitle}</p>
+          </div>
+        ))}
       </div>
 
       {/* Category Breakdown */}
       <div className="card">
-        <h3 className="card-title">Kategori Penggunaan ({summary.daysTracked} hari)</h3>
-        <div className="grid grid-3" style={{ marginTop: '20px' }}>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{
-              width: '80px',
-              height: '80px',
-              borderRadius: '50%',
-              background: '#d1fae5',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 12px',
-              fontSize: '32px',
-              fontWeight: '700',
-              color: '#065f46'
-            }}>
-              {summary.categoryBreakdown?.Hemat || 0}
-            </div>
-            <p style={{ fontWeight: '600', color: '#065f46' }}>Hemat</p>
-            <p style={{ fontSize: '12px', color: '#6b7280' }}>Hari</p>
-          </div>
+        <div className="category-header">
+          <h3 className="card-title">Kategori Penggunaan</h3>
+          <span className="category-badge">{summary.daysTracked} hari</span>
+        </div>
 
-          <div style={{ textAlign: 'center' }}>
-            <div style={{
-              width: '80px',
-              height: '80px',
-              borderRadius: '50%',
-              background: '#fef3c7',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 12px',
-              fontSize: '32px',
-              fontWeight: '700',
-              color: '#92400e'
-            }}>
-              {summary.categoryBreakdown?.Normal || 0}
+        <div className="grid grid-3">
+          {categories.map((category, index) => (
+            <div
+              key={index}
+              className="category-card"
+              style={{ background: category.bgColor }}
+            >
+              <div className="category-emoji">{category.emoji}</div>
+              <div className="category-count" style={{ color: category.color }}>
+                {category.count}
+              </div>
+              <p className="category-name" style={{ color: category.color }}>
+                {category.name}
+              </p>
+              <p className="category-label">Hari</p>
             </div>
-            <p style={{ fontWeight: '600', color: '#92400e' }}>Normal</p>
-            <p style={{ fontSize: '12px', color: '#6b7280' }}>Hari</p>
-          </div>
+          ))}
+        </div>
 
-          <div style={{ textAlign: 'center' }}>
-            <div style={{
-              width: '80px',
-              height: '80px',
-              borderRadius: '50%',
-              background: '#fee2e2',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 12px',
-              fontSize: '32px',
-              fontWeight: '700',
-              color: '#991b1b'
-            }}>
-              {summary.categoryBreakdown?.Boros || 0}
-            </div>
-            <p style={{ fontWeight: '600', color: '#991b1b' }}>Boros</p>
-            <p style={{ fontSize: '12px', color: '#6b7280' }}>Hari</p>
+        {/* Progress Bar */}
+        <div className="category-progress-wrapper">
+          <p className="category-progress-label">Distribusi Penggunaan</p>
+          <div className="category-progress-bar">
+            {categories.map((cat, i) => (
+              <div
+                key={i}
+                className="category-progress-segment"
+                style={{
+                  width: `${(cat.count / summary.daysTracked) * 100}%`,
+                  background: cat.color,
+                }}
+              />
+            ))}
           </div>
         </div>
       </div>

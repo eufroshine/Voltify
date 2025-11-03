@@ -7,6 +7,7 @@ const connectDB = require('./config/db');
 const applianceRoutes = require('./routes/appliances');
 const usageRoutes = require('./routes/usage');
 const settingsRoutes = require('./routes/settings');
+const authRoutes = require('./routes/authRoutes'); // ✅ TAMBAHKAN INI
 
 // Initialize express
 const app = express();
@@ -25,6 +26,7 @@ app.get('/', (req, res) => {
     message: '⚡ Welcome to Voltify API',
     version: '1.0.0',
     endpoints: {
+      auth: '/api/auth',           // ✅ TAMBAHKAN INI
       appliances: '/api/appliances',
       usage: '/api/usage',
       settings: '/api/settings'
@@ -32,6 +34,7 @@ app.get('/', (req, res) => {
   });
 });
 
+app.use('/api/auth', authRoutes);        // ✅ TAMBAHKAN INI
 app.use('/api/appliances', applianceRoutes);
 app.use('/api/usage', usageRoutes);
 app.use('/api/settings', settingsRoutes);

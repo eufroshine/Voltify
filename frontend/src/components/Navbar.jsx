@@ -1,28 +1,80 @@
-import React from 'react';
-import { Zap } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Zap, Home, Calculator, History, Settings, LogIn, LogOut } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
-const Navbar = () => {
+const Navbar = ({ activeTab, setActiveTab, isLoggedIn, onLogout }) => {
+  const [scrolled, setScrolled] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 50);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const menuItems = [
+    { id: 'dashboard', label: 'Dashboard', icon: Home },
+    { id: 'calculate', label: 'Hitung', icon: Calculator },
+    { id: 'history', label: 'Riwayat', icon: History },
+    { id: 'settings', label: 'Pengaturan', icon: Settings },
+  ];
+
   return (
-    <nav style={{
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      padding: '20px 0',
-      boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-      marginBottom: '30px'
-    }}>
-      <div className="container" style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <Zap size={32} color="white" />
-          <h1 style={{ color: 'white', fontSize: '28px', fontWeight: '700' }}>
-            Voltify
-          </h1>
+    <nav className={`navbar ${scrolled ? 'navbar-scrolled' : ''}`}>
+      <div className={`navbar-content ${scrolled ? '' : 'container'}`}>
+        {/* === Brand === */}
+        <div className="navbar-brand">
+          <div className="navbar-icon">
+            <Zap size={scrolled ? 24 : 28} strokeWidth={2.5} />
+          </div>
+          <div className="navbar-title-wrapper">
+            <h1 className="navbar-title">Voltify</h1>
+            {!scrolled && <p className="navbar-subtitle">Smart Energy</p>}
+          </div>
         </div>
-        <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: '14px' }}>
-          Smart Electricity Management System
-        </p>
+
+        {/* === Menu === */}
+        <div className="navbar-menu">
+          {menuItems.map((item) => (
+            <button
+              key={item.id}
+              className={`navbar-menu-item ${activeTab === item.id ? 'active' : ''}`}
+              onClick={() => setActiveTab(item.id)}
+            >
+              <item.icon size={18} />
+              <span>{item.label}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* === Right Section (Login/Logout + Live) === */}
+        <div className="navbar-right">
+          {/* ✅ Conditional: Login atau Logout */}
+          {isLoggedIn ? (
+            <button 
+              className="navbar-login-btn navbar-logout-btn" 
+              onClick={onLogout}
+              title="Logout"
+            >
+              <LogOut size={18} />
+              <span>Logout</span>
+            </button>
+          ) : (
+            <button 
+              className="navbar-login-btn" 
+              onClick={() => navigate('/login')}
+              title="Login"
+            >
+              <LogIn size={18} />
+              <span>Login</span>
+            </button>
+          )}
+
+          <div className="navbar-badge">
+            <span className="status-dot"></span>
+            <span>Live</span>
+          </div>
+        </div>
       </div>
     </nav>
   );

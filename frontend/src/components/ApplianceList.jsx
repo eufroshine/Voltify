@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Trash2, Zap, Clock } from 'lucide-react';
 import { applianceAPI } from '../services/api';
 
@@ -6,20 +6,49 @@ const ApplianceList = ({ refresh, onSelectionChange }) => {
   const [appliances, setAppliances] = useState([]);
   const [selectedIds, setSelectedIds] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  // 🔥 CRITICAL FIX: Prevent calling onSelectionChange on every render
+  const isInitialMount = useRef(true);
+  const previousSelectionRef = useRef([]);
 
   useEffect(() => {
     fetchAppliances();
   }, [refresh]);
+
+  // 🔥 FIX: Only call onSelectionChange when selection ACTUALLY changes
+  useEffect(() => {
+    // Skip on initial mount
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
+    // Only call if selection actually changed
+    const prev = previousSelectionRef.current;
+    const hasChanged = 
+      prev.length !== selectedIds.length ||
+      !prev.every(id => selectedIds.includes(id));
+
+    if (hasChanged) {
+      console.log('📋 Selection actually changed:', selectedIds.length, 'items');
+      onSelectionChange(selectedIds);
+      previousSelectionRef.current = selectedIds;
+    }
+  }, [selectedIds, onSelectionChange]);
 
   const fetchAppliances = async () => {
     try {
       const response = await applianceAPI.getAll();
       if (response.data.success) {
         setAppliances(response.data.data);
-        // Auto select all by default
-        const allIds = response.data.data.map(a => a._id);
-        setSelectedIds(allIds);
-        onSelectionChange(allIds);
+        
+        // 🔥 FIX: Only auto-select on first load
+        if (previousSelectionRef.current.length === 0 && response.data.data.length > 0) {
+          const allIds = response.data.data.map(a => a._id);
+          setSelectedIds(allIds);
+          previousSelectionRef.current = allIds;
+          console.log('✅ Initial auto-select:', allIds.length, 'items');
+        }
       }
     } catch (error) {
       console.error('Error fetching appliances:', error);
@@ -33,20 +62,35 @@ const ApplianceList = ({ refresh, onSelectionChange }) => {
 
     try {
       await applianceAPI.delete(id);
+      
+      // Update selection before refetch
+      const newSelected = selectedIds.filter(selectedId => selectedId !== id);
+      setSelectedIds(newSelected);
+      
       fetchAppliances();
     } catch (error) {
       alert('Gagal menghapus alat');
     }
   };
 
-  const handleCheckboxChange = (id) => {
-    const newSelected = selectedIds.includes(id)
-      ? selectedIds.filter(selectedId => selectedId !== id)
-      : [...selectedIds, id];
-    
-    setSelectedIds(newSelected);
-    onSelectionChange(newSelected);
-  };
+  const handleCheckboxChange = useCallback((id) => {
+    setSelectedIds(prev => {
+      if (prev.includes(id)) {
+        return prev.filter(selectedId => selectedId !== id);
+      } else {
+        return [...prev, id];
+      }
+    });
+  }, []);
+
+  const handleSelectAll = useCallback((checked) => {
+    if (checked) {
+      const allIds = appliances.map(a => a._id);
+      setSelectedIds(allIds);
+    } else {
+      setSelectedIds([]);
+    }
+  }, [appliances]);
 
   const calculateKwh = (wattage, hours) => {
     return ((wattage * hours) / 1000).toFixed(3);
@@ -85,17 +129,8 @@ const ApplianceList = ({ refresh, onSelectionChange }) => {
               <th style={{ padding: '12px', textAlign: 'left' }}>
                 <input
                   type="checkbox"
-                  checked={selectedIds.length === appliances.length}
-                  onChange={(e) => {
-                    if (e.target.checked) {
-                      const allIds = appliances.map(a => a._id);
-                      setSelectedIds(allIds);
-                      onSelectionChange(allIds);
-                    } else {
-                      setSelectedIds([]);
-                      onSelectionChange([]);
-                    }
-                  }}
+                  checked={selectedIds.length === appliances.length && appliances.length > 0}
+                  onChange={(e) => handleSelectAll(e.target.checked)}
                 />
               </th>
               <th style={{ padding: '12px', textAlign: 'left' }}>Nama</th>

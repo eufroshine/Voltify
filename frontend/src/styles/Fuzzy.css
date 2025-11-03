@@ -1,0 +1,118 @@
+/* === FuzzyAnalysis Styles - FIXED VERSION === */
+
+/* Komponen utama - z-index normal */
+.fuzzy-analysis {
+    position: relative;
+    z-index: 1;
+  }
+  
+  /* ✅ HAPUS pointer-events: auto pada semua child! 
+     Biarkan React yang handle disabled state */
+  
+  /* Loading spinner - pastikan tidak blocking */
+  .spinner {
+    border: 3px solid rgba(107, 138, 153, 0.2);
+    border-top: 3px solid #567180;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    animation: spin 0.7s linear infinite;
+    display: inline-block;
+    vertical-align: middle;
+    /* ✅ Penting: spinner tidak boleh block clicks */
+    pointer-events: none;
+  }
+  
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  
+  /* Tombol disabled - HARUS tidak bisa diklik */
+  .fuzzy-analysis button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+  
+  /* Pastikan tombol aktif bisa diklik */
+  .fuzzy-analysis button:not(:disabled) {
+    cursor: pointer;
+    pointer-events: auto;
+  }
+  
+  /* Error message styling */
+  .fuzzy-analysis .error-message {
+    padding: 12px 16px;
+    background: #fee2e2;
+    color: #991b1b;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-left: 4px solid #ef4444;
+  }
+  
+  /* Result card styling */
+  .fuzzy-analysis .result-card {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    margin-top: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(225, 230, 235, 0.6);
+  }
+  
+  /* Category badge colors */
+  .fuzzy-analysis .category-hemat {
+    background: #d1fae5;
+    color: #065f46;
+    border: 3px solid #10b981;
+  }
+  
+  .fuzzy-analysis .category-normal {
+    background: #fef3c7;
+    color: #92400e;
+    border: 3px solid #f59e0b;
+  }
+  
+  .fuzzy-analysis .category-boros {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 3px solid #ef4444;
+  }
+  
+  /* Date selector styling */
+  .fuzzy-analysis input[type="date"] {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1.5px solid #e1e6eb;
+    border-radius: 10px;
+    font-size: 14px;
+    font-family: inherit;
+    background-color: white;
+    color: #2d3e4f;
+    transition: all 0.3s ease;
+  }
+  
+  .fuzzy-analysis input[type="date"]:focus {
+    outline: none;
+    border-color: #6b8a99;
+    box-shadow: 0 0 0 3px rgba(107, 138, 153, 0.1);
+  }
+  
+  /* Responsive */
+  @media (max-width: 768px) {
+    .fuzzy-analysis .result-card {
+      padding: 20px;
+    }
+    
+    .fuzzy-analysis input[type="date"] {
+      font-size: 16px; /* Prevent zoom on iOS */
+    }
+  }
